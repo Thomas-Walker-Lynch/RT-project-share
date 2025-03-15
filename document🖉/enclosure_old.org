@@ -1,0 +1,140 @@
+* Bracketed Phrases
+
+Here we refer to token processing.  A 'bracketed phrase' is all the text found when parsing from the point an opening bracket is found, up until the point that the matching closing bracket is found. The phrase includes the enclosing brackets.
+
+We generalize the concept of bracketed phrase to include the following punctuation,
+and that found in between.
+
+- `(...)` (parentheses)
+- `{...}` (braces)
+- `[...]` (square brackets)
+- `<...>` (angle brackets)
+
+The '(', ')', '{', '}', '[', ']', '<', '>' are said to be parenthetical punctuation. 
+
+Generally a bracketed phrase is discovered at the token parsing level, as such it does not take into account any of the syntax nor semantics of the grammar that will be applied to the token stream later.
+
+However, there are special cases where higher level context will be required. Namely when distinguishing between angle brackets and magnitude comparisons, and for Lisp sexprs, as explained further below.
+
+Hence `if(x){ ...'  is formatted just as `f(x){...`  because in both cases the spacing is determined at the token level. That `if` is a statement, or that `f` is a function, has no baring because at the token level they are both merely identifiers.
+
+**As a Container**
+
+A bracketed phrase has enclosing matching punctuation known as the 'container'. Inside the containing punctuation are zero or more text characters, which are known as the 'contents'.  For example `sin(3x)` has one bracketed phrase,  `(3x)`, and the contents of this phrase is `3x`.  The container is `()`.
+
+**Nesting**
+
+1. **Kernel Bracketed Phrase**  
+
+   A bracketed phrase that does not contain another bracketed phrase.
+
+2. **Contained Bracketed Phrase**
+
+   A contained bracketed phrase is found in the contents of another bracketed phrase.
+
+   So for example, in `sin(f(x))` the bracketed phrase `(x)`  is contained in the bracketed phrase '(f(x))`, so it is a 'contained bracketed phrase'.
+
+   A contained bracketed phrase is also called an 'inner bracketed phrase'.
+
+3. **Outer Bracketed Phrase**
+
+   If a bracketed phrase is contained in another bracketed phrase, then the
+   contained bracketed phrase is the 'inner bracked phrase' and the bracked phase
+   that contains it is the 'outer bracketed phrase'.
+
+   An outer bracketed phrase that is not contained by any other bracketed phrase
+   is the 'outermost' bracketed phrase.  So for example, given `( a (b (c) (d)) )`
+   There are two kernels, '(c)' and '(d)'.  Those two kernels appear in the outer bracketed phrase of `(b (c) (d))`, that phrase is contained in the outer bracketed phrase of `( a (b (c) (d)) )`.
+
+4. **Bracketed Phrase with Nesting**
+
+   A bracketed phrase with nesting is one that contains at least one other bracketed phrase. It need not matter which matching punctuation the inner bracketed phrases have.
+
+   It follows that an Outer Bracketed Phrase will always be a Bracketed Phrase with Nesting.
+
+   It follows that a Kernel Bracketed Phrase is never a Bracketed Phrase with Nesting.
+
+4. **Outermost Bracketed Phrase**
+
+   An outermost bracketed phrase is not contained in any other bracketed phrase.
+
+
+**Open** 
+
+An open bracketed phrase is one on that has no matching closing punctuation, or not matching opening punctuation.
+
+An open on the lines bracketed phrase, is one that is open when tokenizing only the given line.
+
+1. **Open on Right on a Line**  
+   - If one or more unmatched on the line opening bracket punctuation appears, these are said to form an 'open on the right bracketed phrase'.
+   - These are treated as though they were closed on the right on the line.
+
+2. **Open on Left Enclosures**  
+   - If one or more unmatched on the line closing bracket punctuation appears, these are said to form an 'open on the left enclosure'.
+   - These are treated as though they were opened on the left on the line.
+
+**1D Box Analogy**
+
+Consider an bracketed phrase to be like a 1D CSS box. In this analogy consider the bracketed phrase punctuation to be the box borders. Then in the language of CSS we have margin, which is space outside of the bracketed phrase punctuation, and padding, which is space immediately inside the bracketed phrase punctuation.
+
+**Bracketed Phrase Margin**
+
+All bracketed phrases have no native spaces on the outside. I say 'native' because
+some other rules might add a space, such as operator rules, or bracketed phrase followed
+by an identifier.  Hence `f()()`  is correct while `f () ()` would be incorrect because both of the kernel bracketed phrases have spacing outside of them.  On the other hand `(a) + (b)` is correct, because the plus operator has spaces around it.
+
+**Bracketed Phrase Padding**
+
+When a bracketed phrase is both:  a) a bracketed phrase with nesting  AND b) an outermost bracketed phrase on the line, then: It receives one space after the opening bracket unless it is a Lisp sexpr, and one space before the closing bracket.
+
+There is no other case where a native space is placed after the opening bracket, or placed before the closing bracket.
+
+** Adjacency
+
+   When two separate bracketed phrases appear side by side.  There is no space between them.
+
+
+* Examples of Bracketed Phrase Formatting
+
+**Flat Bracketed Phrases (No Padding)**
+#+BEGIN_SRC c
+result = function_call(param1 ,param2);
+value = (uint32_t)(3 + 4*5);
+#+END_SRC
+
+**Nested Bracketed Phrases (Only an outer type of nested bracketed phrase receives padding)**
+#+BEGIN_SRC c
+if( (x == 3 || y < 5) && z ){
+  process_data();
+}
+#+END_SRC
+
+#+BEGIN_SRC c
+data.set( map.get(key) );
+#+END_SRC
+
+#+BEGIN_SRC c
+if( (index().compareTo(BigInteger.valueOf(array.size() - 1))) == 0 ){
+  execute_action();
+}
+#+END_SRC
+
+#+BEGIN_SRC c
+( a (b (c)) )
+#+END_SRC
+
+#+BEGIN_SRC c
+if(
+   ( condition_one() && condition_two() ) 
+){
+   execute_action();
+}
+#+END_SRC
+
+#+BEGIN_SRC c
+(uint32_t)(3 + 4*5)
+#+END_SRC
+
+#+BEGIN_SRC c
+data.set( map.get(key) );
+#+END_SRC

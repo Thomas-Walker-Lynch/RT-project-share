@@ -34,7 +34,7 @@ OBJECT_EXEC= $(patsubst %, $(TMPDIR)/%.cli.o, $(C_BASE_EXEC))
 # executables are made from EXEC sources
 EXEC= $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
 
-# new C programming style uses cpp macros to the source is the header
+# the new C programming style gated sections in source instead of header filesheader
 INCFLAG_List := $(foreach dir, $(SRCDIR_List), -I $(dir))
 CFLAGS += $(INCFLAG_List)
 
@@ -46,7 +46,9 @@ all: usage
 
 .PHONY: usage
 usage:
-	@echo example usage: make dist-clean dependency cli
+	@echo example usage: make dependency library cli
+	@echo example usage: make dependency
+	@echo example usage: make library
 	@echo example usage: make cli
 
 .PHONY: version
@@ -69,10 +71,14 @@ information:
 
 
 .PHONY: dependency
-dependency:
+dependency: $(DEPFILE)
+
+$(DEPFILE): $(C_SOURCE_LIB) $(C_SOURCE_EXEC)
 	@rm -f $(DEPFILE)
-	$(C) $(CFLAGS) -MM  $(C_SOURCE_LIB) $(C_SOURCE_EXEC) | sed 's|^.*\.o|$(TMPDIR)/&|' >> $(DEPFILE);\
+	$(C) $(CFLAGS) -MM  $(C_SOURCE_LIB) $(C_SOURCE_EXEC) \
+	  | sed 's|^.*\.o|$(TMPDIR)/&|' >> $(DEPFILE);\
 	echo "deps for C linking";\
+        # build library:\
 	for i in $(C_BASE_EXEC); do\
 	  $(ECHO) >> $(DEPFILE);\
 	  $(ECHO) "$(EXECDIR)/$$i : $(TMPDIR)/$$i.cli.o $(LIBFILE)" >> $(DEPFILE);\
@@ -80,26 +86,24 @@ dependency:
 	done;
 
 .PHONY: library
-library: $(LIBFILE)
+library: $(LIBFILE) 
 
-$(LIBFILE): $(OBJECT_LIB)
+$(LIBFILE): $(OBJECT_LIB) $(DEPFILE)
 	ar rcs $(LIBFILE) $(OBJECT_LIB)
 
 .PHONY: cli
-cli: $(LIBFILE)
+cli: $(LIBFILE) $(DEPFILE)
 	make sub_cli
 
 .PHONY: sub_cli
 sub_cli: $(EXEC)
 
+# generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
+
 .PHONY: clean
 clean:
 	rm -f $(DEPFILE) $(LIBFILE)
 	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj || true; done
-
-
-.PHONY: dist-clean
-dist-clean: clean
 	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done 
 
 # recipes

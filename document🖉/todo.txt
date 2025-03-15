@@ -10,5 +10,13 @@
   yeah we sill need an official RT-skeleton project.  This should wait for Ariadne to
   be available.
 
+2024-12-08T08:29:20Z
+  change the bash prompt to show the real path, or perhaps a vl of both, so
+  that when following links the prompt shows the pencil of the realdir
 
-  
+2024-12-09T10:23:22Z
+
+  rm_na has a bug where it determines authorship based on the link target, and the link target's directory hierarchy, instead of from the link itself and the link's hierarchy.
+
+  this effects the clean_build_script, found in many projects, such as Mosaic.
+

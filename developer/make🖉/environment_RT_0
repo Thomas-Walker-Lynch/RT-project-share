@@ -9,7 +9,7 @@ ECHO= echo -e
 
 SRCDIR_List=cc cc🖉
 LIBDIR=scratchpad
-EXECDIR=amd64
+EXECDIR=machine
 TMPDIR=scratchpad
 
 DEPFILE=$(TMPDIR)/makefile-cc.deps

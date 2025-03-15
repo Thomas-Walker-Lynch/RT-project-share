@@ -1,0 +1,10 @@
+;; this is a text file so that it won't be loaded, ironically by the very code described here.
+
+(let 
+  (
+    (directory "~/RT-project-share/release/emacs/")
+    )
+  (when (file-directory-p directory)
+    (dolist (file (directory-files directory t "\\.el$"))
+      (load file)
+      )))

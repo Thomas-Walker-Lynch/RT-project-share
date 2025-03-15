@@ -1,0 +1,9 @@
+
+M-x package-install RET adaptive-wrap RET
+
+(visual-line-mode 1)
+(adaptive-wrap-prefix-mode 1)
+
+# using visual-wrap-column-mode 
+(visual-wrap-column-mode 1)
+(setq visual-wrap-column 80)  ;; Wrap at 80 characters

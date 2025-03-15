@@ -1,0 +1,25 @@
+Mosaic - for testing
+
+  > cd $REPO_HOME/tool_shared/third_party
+  > git clone https://github.com/Thomas-Walker-Lynch/Mosaic.git
+
+ This will have already been done:
+
+    $REPO_HOME/tool_shared/bespoke/env will have:
+       export MOSAIC_HOME="$REPO_HOME/tool_shared/third_party/Mosaic/release"
+
+    $REPO_HOME/tester/tool/env, will have Mosaic
+
+    export PATH=\
+    "$REPO_HOME"/tester/tool/\
+    :"$JAVA_HOME"/bin\
+    :"$MOSAIC_HOME"\
+    :"$PATH"
+
+    export CLASSPATH=\
+    "$JAVA_HOME"/lib\
+    :"$MOSAIC_HOME"/Mosaic.jar\
+    :"$REPO_HOME"/release/"$PROJECT".jar\
+    :"$REPO_HOME"/tester/jvm/Test_"$PROJECT".jar\
+    :"$CLASSPATH"
+

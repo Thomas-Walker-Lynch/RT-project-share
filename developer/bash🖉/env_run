@@ -6,37 +6,33 @@
 # running commands through this executor.
 
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 <environment> <command> [args...]"
-    echo "Example: $0 developer make"
+    echo "Usage: $(basename $0) <env_script>[:args...] <command> [args...]"
+    echo "Example: $(basename $0) tester:developer Test_File0"
     exit 1
 fi
 
-# extract the environment and the command
-environment=$1
+# Extract the env_script and optional arguments
+raw_env=$1
 shift
 command=$1
 shift
 command_args="$@"
 
-# Determine the path to the environment script based on the environment
-case "$environment" in
-    developer)
-        env_script="env_developer"
-        ;;
-    tester)
-        env_script="env_tester"
-        ;;
-    *)
-        echo "Error: Unknown environment '$environment'. Supported environments are: developer, tester."
-        exit 1
-        ;;
-esac
+# Split the env_script and its arguments by colon
+IFS=":" read -r env_script env_args <<< "$raw_env"
 
-# check if the environment script exists and is readable
+# Check if the env_script exists and is readable
 if [ ! -f "$env_script" ] || [ ! -r "$env_script" ]; then
     echo "Error: Environment script '$env_script' not found or not readable."
     exit 1
 fi
 
-source "$env_script"
-exec "$command" "$command_args"
+# Split env_args into an array
+IFS=":" read -r -a env_args_array <<< "$env_args"
+
+# Source the script with the array of arguments
+source "$env_script" "${env_args_array[@]}"
+
+# Execute the command with its arguments
+exec "$command" $command_args
+

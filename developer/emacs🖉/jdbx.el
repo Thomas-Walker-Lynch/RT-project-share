@@ -1,4 +1,3 @@
-
 ; The first time Emacs  encounters a link to a source file, Emacs asks if it should follow it.
 ; This might suppress that initial question and follow the link.
 ; (setq find-file-visit-truename t)
@@ -18,16 +17,15 @@
     (let 
       (
         (class-name (read-string "Enter the class to debug: " "Test_Util"))
+        (sourcepath-arg 
+          (if 
+            sourcepath
+            (concat "-sourcepath" (mapconcat 'identity gud-jdb-sourcepath ":"))
+            ""
+            ))
         )
-      (jdb (concat "jdb -sourcepath"
-             (if 
-               sourcepath 
-               (mapconcat 'identity gud-jdb-sourcepath ":") ""
-               )
-             " "
-             class-name
-             )
-        ))))
+      (jdb (concat "jdb " sourcepath-arg " " class-name))
+      )))
 
 (defun monitor-jdb-sourcepath (output)
   "Monitor the jdb output for `sourcepath ARG` commands and update `gud-jdb-sourcepath` with each path in ARG."
@@ -47,6 +45,7 @@
           )
         )
       (message "Updated gud-jdb-sourcepath: %s" gud-jdb-sourcepath)))
-  output)
+  output
+  )
 
 (add-hook 'gud-filter-functions 'monitor-jdb-sourcepath)

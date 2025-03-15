@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+script_afp=$(realpath "${BASH_SOURCE[0]}")
+
+  arch=$(uname -m)
+  os=$(source /etc/os-release && echo "$ID$VERSION_ID")
+  libc_version=$(ldd --version | head -n1 | awk '{print $NF}')  # glibc version
+  echo "$REPO_HOME/release/$arch/$os/glibc_$libc_version"

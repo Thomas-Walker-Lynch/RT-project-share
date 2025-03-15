@@ -74,20 +74,20 @@
     <li><strong>Implementation section:</strong> Contains function definitions and additional includes needed for the implementation. This section is compiled only when the file is used as an implementation.</li>
   </ul>
 
-  <p>Each section is turned on and off with the CPP macro <code>IFACE</code>.</p>
+  <p>Each section is turned on and off with the CPP macro <code>FACE</code>.</p>
 
   <h3>Example</h3>
   <pre><code>
-// If not an IFACE, then an IMPLEMENTATION
-#ifndef IFACE
+// If not an FACE, then an IMPLEMENTATION
+#ifndef FACE
   #define MyModule·IMPLEMENTATION
   // Ensures included files are processed for their interfaces.
-  #define IFACE
+  #define FACE
 #endif
 
 // Define the interface exactly once.
-#ifndef MyModule·IFACE
-#define MyModule·IFACE
+#ifndef MyModule·FACE
+#define MyModule·FACE
   // Interface-only includes go here.
   void MyModule·function();
 #endif
@@ -103,8 +103,8 @@
 
   <h3>Explanation</h3>
   <p>The example above demonstrates the structure and purpose of each block:</p>
-  <p><strong>First block:</strong> Ensures that the file operates correctly based on the value of <code>IFACE</code>. If <code>IFACE</code> is undefined, it defines <code>MyModule·IMPLEMENTATION</code> to enable the implementation section and sets <code>IFACE</code> to ensure subsequent includes process interface sections.</p>
-  <p><strong>Second block:</strong> Defines the interface, including declarations and interface-specific includes. The <code>#ifndef MyModule·IFACE</code> macro ensures the interface is defined exactly once, regardless of how many times the file is included.</p>
+  <p><strong>First block:</strong> Ensures that the file operates correctly based on the value of <code>FACE</code>. If <code>FACE</code> is undefined, it defines <code>MyModule·IMPLEMENTATION</code> to enable the implementation section and sets <code>FACE</code> to ensure subsequent includes process interface sections.</p>
+  <p><strong>Second block:</strong> Defines the interface, including declarations and interface-specific includes. The <code>#ifndef MyModule·FACE</code> macro ensures the interface is defined exactly once, regardless of how many times the file is included.</p>
   <p><strong>Third block:</strong> Contains implementation-specific includes and function definitions. Guarded by <code>MyModule·IMPLEMENTATION</code>, it is only included when compiling the implementation.</p>
   <p>Interface includes are placed in the interface block, ensuring they are available wherever the interface is used. Implementation includes are isolated in the implementation block, minimizing unnecessary dependencies in other files.</p>
 
