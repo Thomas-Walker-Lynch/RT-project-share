@@ -1,7 +1,10 @@
+
+# This targets file links to an existing project library. If it is missing it will give an error rather than chaining back to build it.  This is the behavior the tester wants when testing a project library pulled from the release directory.
+
 .SUFFIXES:
 
 #--------------------------------------------------------------------------------
-# files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 
+# files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c, this targets file ignores the X.lib.c files, if any.
 #
 
 # bail early if there is no compiler
@@ -17,23 +20,21 @@ ifeq ($(SRCDIR_List),)
   $(error source directory found so nothing to do)
 endif
 
-# duplicate source file names in different directories will cause
-# problems with this makefile
-
-C_SOURCE_LIB := $(foreach dir, $(SRCDIR_List), $(wildcard $(dir)/*.lib.c))
+# Identify lib and cli sources (but we don't build the lib, but the lib.c files are also used as headers, so we need them for dependency checking.
+# duplicate source file names in different directories will cause problems with this makefile
+C_SOURCE_LIB  := $(foreach dir, $(SRCDIR_List), $(wildcard $(dir)/*.lib.c))
 C_SOURCE_EXEC := $(foreach dir, $(SRCDIR_List), $(wildcard $(dir)/*.cli.c))
 
 #remove the suffix to get base name
-C_BASE_LIB=  $(sort $(patsubst %.lib.c,  %, $(notdir $(C_SOURCE_LIB))))
 C_BASE_EXEC=  $(sort $(patsubst %.cli.c,  %, $(notdir $(C_SOURCE_EXEC))))
 
-# two sets of object files, one for the lib, and one for the command line interface progs
-OBJECT_LIB= $(patsubst %, $(TMPDIR)/%.lib.o, $(C_BASE_LIB))
+# object files for building the each command line interface progs
 OBJECT_EXEC= $(patsubst %, $(TMPDIR)/%.cli.o, $(C_BASE_EXEC))
 
 # executables are made from EXEC sources
 EXEC= $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
 
+# include directories
 # the new C programming style gated sections in source instead of header filesheader
 INCFLAG_List := $(foreach dir, $(SRCDIR_List), -I $(dir))
 CFLAGS += $(INCFLAG_List)
@@ -46,28 +47,30 @@ all: usage
 
 .PHONY: usage
 usage:
-	@echo example usage: make dependency library cli
+	@echo example usage: make clean
+	@echo example usage: make dependency cli
 	@echo example usage: make dependency
-	@echo example usage: make library
 	@echo example usage: make cli
 
 .PHONY: version
 version:
-	@echo makefile version 7.1
+	@echo "tester_targets version 1.0"
 	if [ ! -z "$(C)" ]; then $(C) -v; fi
 	/bin/make -v
 
 .PHONY: information
 information:
+	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
 	@echo "SRCDIR_List: " $(SRCDIR_List)
 	@echo "C_SOURCE_LIB: " $(C_SOURCE_LIB)
 	@echo "C_SOURCE_EXEC: " $(C_SOURCE_EXEC)
-	@echo "C_BASE_LIB: " $(C_BASE_LIB)
 	@echo "C_BASE_EXEC: " $(C_BASE_EXEC)
-	@echo "OBJECT_LIB: " $(OBJECT_LIB)
 	@echo "OBJECT_EXEC: " $(OBJECT_EXEC)
 	@echo "EXEC: " $(EXEC)
 	@echo "INCFLAG_List: " $(INCFLAG_List)
+
+
+# We generate dependencies for .lib.c AND .cli. because the tester might include the interface or local portion of some .lib.c. But we do NOT produce rules for building .lib.o or the library.
 
 
 .PHONY: dependency
@@ -75,21 +78,14 @@ dependency: $(DEPFILE)
 
 $(DEPFILE): $(C_SOURCE_LIB) $(C_SOURCE_EXEC)
 	@rm -f $(DEPFILE)
-	$(C) $(CFLAGS) -MM  $(C_SOURCE_LIB) $(C_SOURCE_EXEC) \
+	$(C) $(CFLAGS) -MM $(C_SOURCE_EXEC) \
 	  | sed 's|^.*\.o|$(TMPDIR)/&|' >> $(DEPFILE);\
-	echo "deps for C linking";\
-        # build library:\
-	for i in $(C_BASE_EXEC); do\
-	  $(ECHO) >> $(DEPFILE);\
-	  $(ECHO) "$(EXECDIR)/$$i : $(TMPDIR)/$$i.cli.o $(LIBFILE)" >> $(DEPFILE);\
-	  $(ECHO) "	$(C) -o $(EXECDIR)/$$i $(TMPDIR)/$$i.cli.o $(LINKFLAGS)" >> $(DEPFILE);\
+	echo "deps for .cli.o file linking";\
+	for i in $(C_BASE_EXEC); do \
+	  echo "" >> $(DEPFILE); \
+	  echo "$(EXECDIR)/$$i : $(TMPDIR)/$$i.cli.o" >> $(DEPFILE); \
+	  echo "	$(C) -o $(EXECDIR)/$$i $(TMPDIR)/$$i.cli.o $(LINKFLAGS)" >> $(DEPFILE);\
 	done;
-
-.PHONY: library
-library: $(LIBFILE) 
-
-$(LIBFILE): $(OBJECT_LIB) $(DEPFILE)
-	ar rcs $(LIBFILE) $(OBJECT_LIB)
 
 .PHONY: cli
 cli: $(LIBFILE) $(DEPFILE)
@@ -102,8 +98,8 @@ sub_cli: $(EXEC)
 
 .PHONY: clean
 clean:
-	rm -f $(DEPFILE) $(LIBFILE)
-	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj || true; done
+	rm -f $(DEPFILE)
+	for obj in $(OBJECT_EXEC); do rm -f $$obj || true; done
 	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done 
 
 # recipes

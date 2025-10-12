@@ -4,10 +4,14 @@
 
 SHELL=/bin/bash
 
-ECHO= echo -e
+#ECHO= echo -e
 #ECHO= echo
+ECHO := printf "%b\n"
 
+
+# sources found in these subdirectories:
 SRCDIR_List=cc cc🖉
+
 LIBDIR=scratchpad
 EXECDIR=machine
 TMPDIR=scratchpad
@@ -16,5 +20,5 @@ DEPFILE=$(TMPDIR)/makefile-cc.deps
 LIBFILE=$(TMPDIR)/lib.a
 
 C=gcc
-CFLAGS=
+CFLAGS=-std=gnu11 -Wall -Wextra -Wpedantic -finput-charset=UTF-8
 LINKFLAGS=-L$(LIBDIR) -L/lib64 -L/lib
