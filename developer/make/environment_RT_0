@@ -10,7 +10,7 @@ ECHO := printf "%b\n"
 
 
 # sources found in these subdirectories:
-SRCDIR_List=cc cc🖉
+SRCDIR_List=cc cc
 
 LIBDIR=scratchpad
 EXECDIR=machine
