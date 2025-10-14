@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# puts a tar file of the repo in the top level scratchdir
+
+set -euo pipefail
+
+# ensure we're in a git repo
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+  echo "Error: not inside a git repository." >&2
+  exit 1
+}
+
+repo_top="$(git rev-parse --show-toplevel)"
+repo_name="$(basename "$repo_top")"
+ref_label="$(git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD)"
+out="${repo_top}/scratchpad/${repo_name}-${ref_label}.tar.gz"
+
+# create archive of HEAD (tracked files only; .gitignore’d stuff is omitted)
+git -C "$repo_top" archive --format=tar --prefix="${repo_name}/" HEAD | gzip > "$out"
+
+echo "Wrote ${out}"
