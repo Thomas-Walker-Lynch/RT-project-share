@@ -1,0 +1,58 @@
+# targets_kernel
+
+# KBUILD ABSTRACTION
+#
+# Assumes the following variables are defined by the project's tool/makefile:
+# KBUILD_BASE_List: The basenames of all kernel modules (e.g. 'rabbit_module_no-op').
+# PWD: Project root directory.
+# TMPDIR: Shared scratchpad directory for all output.
+
+KDIR := /lib/modules/$(shell uname -r)/build
+# Use KBUILD_OUTPUT_DIR to direct Kbuild output to the scratchpad
+KBUILD_OUTPUT_DIR := $(TMPDIR)
+
+# Convert KBUILD_BASE_List (e.g. "no-op") into Kbuild-compatible object list (e.g. "no-op.o")
+KERNEL_OBJS_M := $(addsuffix .o, $(KBUILD_BASE_List))
+
+# KERNEL_MODULE_TARGETS holds the full, scratchpad-prefixed path to the final .ko files
+KERNEL_MODULE_TARGETS := $(addsuffix .ko, $(addprefix $(KBUILD_OUTPUT_DIR)/, $(KBUILD_BASE_List)))
+
+.PHONY: kernel_module clean_kernel
+
+# PRIMARY KERNEL BUILD TARGET
+#
+# The 'kernel_module' target builds all final .ko files.
+kernel_module: $(KERNEL_MODULE_TARGETS)
+
+# --- Implicit Rule to Compile a Single Module ---
+# Target: The final .ko file in the scratchpad (e.g. scratchpad/rabbit_module_no-op.ko)
+# Dependency: The temporary Kbuild source file (e.g. scratchpad/rabbit_module_no-op.c)
+$(KBUILD_OUTPUT_DIR)/%.ko: $(KBUILD_OUTPUT_DIR)/%.c
+	@echo "--- Invoking Kbuild for Module: $* ---"
+	
+	# The Kbuild variables are passed on the command line:
+	# M=$(PWD): tells Kbuild to use the project root as the source directory for relative paths.
+	# O=$(KBUILD_OUTPUT_DIR): tells Kbuild where to place ALL output.
+	# obj-m: specifies the single object file Kbuild must compile and link into a .ko
+	$(MAKE) -C $(KDIR) M=$(PWD) O=$(KBUILD_OUTPUT_DIR) \
+		obj-m=$*.o
+
+# --- Rule to Create Kbuild-Compatible Source Link ---
+# Kbuild expects a .c file, but our source is .mod.c and is read-only in cc/.
+# Action: Copy the read-only source file to the scratchpad under the expected Kbuild name (.c).
+$(KBUILD_OUTPUT_DIR)/%.c: cc/%.mod.c
+	@echo "--- Preparing Kbuild Source Link: $@ ---"
+	cp $< $@
+
+# Ensure 'all' calls the kernel compilation
+all: kernel_module
+
+# --- Callable Kernel Module Cleanup Target ---
+# This target ensures that only the artifacts created by Kbuild are cleaned from the scratchpad.
+clean_kernel:
+	@echo "--- Cleaning Kbuild Artifacts for Modules in $(KBUILD_OUTPUT_DIR) ---"
+	
+	# Kbuild is run from the project root (M=$(PWD)) but cleans files in the output directory (O=$(KBUILD_OUTPUT_DIR))
+	# We pass obj-m to ensure Kbuild knows which modules to clean, thus only removing specific artifacts.
+	$(MAKE) -C $(KDIR) M=$(PWD) O=$(KBUILD_OUTPUT_DIR) \
+		obj-m="$(KERNEL_OBJS_M)" clean

@@ -106,8 +106,8 @@ sub_cli: $(EXEC)
 
 # generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
 
-.PHONY: clean
-clean:
+.PHONY: clean_developer
+clean_developer:
 	rm -f $(DEPFILE) $(LIBFILE)
 	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj || true; done
 	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done 
