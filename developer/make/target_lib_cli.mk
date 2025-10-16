@@ -1,6 +1,3 @@
-# This has been deprecated in favor of target_lib_cli.mk.
-# It is still here for backwards compatibility but will be going away soon.
-#
 .SUFFIXES:
 
 #--------------------------------------------------------------------------------
@@ -31,8 +28,10 @@ C_BASE_LIB=  $(sort $(patsubst %.lib.c,  %, $(notdir $(C_SOURCE_LIB))))
 C_BASE_EXEC=  $(sort $(patsubst %.cli.c,  %, $(notdir $(C_SOURCE_EXEC))))
 
 # two sets of object files, one for the lib, and one for the command line interface progs
-OBJECT_LIB= $(patsubst %, $(TMPDIR)/%.lib.o, $(C_BASE_LIB))
-OBJECT_EXEC= $(patsubst %, $(TMPDIR)/%.cli.o, $(C_BASE_EXEC))
+OBJECT_LIB= $(patsubst %, $(SCRATCHPAD)/%.lib.o, $(C_BASE_LIB))
+OBJECT_EXEC= $(patsubst %, $(SCRATCHPAD)/%.cli.o, $(C_BASE_EXEC))
+
+-include $(OBJECT_LIB:.o=.d) $(OBJECT_EXEC:.o=.d)
 
 # executables are made from EXEC sources
 EXEC= $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
@@ -44,16 +43,13 @@ CFLAGS += $(INCFLAG_List)
 #--------------------------------------------------------------------------------
 # targets
 
-.PHONY: all
-all: usage
-
+# when no target is given make uses the first target, this one
 .PHONY: usage
 usage:
 	@echo example usage: make clean
-	@echo example usage: make dependency library cli
-	@echo example usage: make dependency
 	@echo example usage: make library
 	@echo example usage: make cli
+	@echo example usage: make library cli
 
 .PHONY: version
 version:
@@ -74,30 +70,13 @@ information:
 	@echo "EXEC: " $(EXEC)
 	@echo "INCFLAG_List: " $(INCFLAG_List)
 
-
-.PHONY: dependency
-dependency: $(DEPFILE)
-
-$(DEPFILE): $(C_SOURCE_LIB) $(C_SOURCE_EXEC)
-	@rm -f $(DEPFILE)
-	$(C) $(CFLAGS) -MM  $(C_SOURCE_LIB) $(C_SOURCE_EXEC) \
-	  | sed 's|^.*\.o|$(TMPDIR)/&|' >> $(DEPFILE);\
-	echo "deps for C linking";\
-        # build library:\
-	for i in $(C_BASE_EXEC); do\
-	  $(ECHO) >> $(DEPFILE);\
-	  $(ECHO) "$(EXECDIR)/$$i : $(TMPDIR)/$$i.cli.o $(LIBFILE)" >> $(DEPFILE);\
-	  $(ECHO) "	$(C) -o $(EXECDIR)/$$i $(TMPDIR)/$$i.cli.o $(LINKFLAGS)" >> $(DEPFILE);\
-	done;
-
 .PHONY: library
 library: $(LIBFILE) 
-
-# dunno why it is making deps every time so...
 
 #$(LIBFILE): $(OBJECT_LIB) $(DEPFILE)
 $(LIBFILE): $(OBJECT_LIB)
 	ar rcs $(LIBFILE) $(OBJECT_LIB)
+
 
 .PHONY: cli
 #cli: $(LIBFILE) $(DEPFILE)
@@ -111,11 +90,16 @@ sub_cli: $(EXEC)
 
 .PHONY: clean
 clean:
-	rm -f $(DEPFILE) $(LIBFILE)
-	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj || true; done
-	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done 
+	rm -f $(LIBFILE)
+	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj $${obj%.o}.d || true; done
+	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done
+
 
 # recipes
 vpath %.c $(SRCDIR_List)
-$(TMPDIR)/%.o: %.c
+$(SCRATCHPAD)/%.o: %.c
 	$(C) $(CFLAGS) -o $@ -c $<
+
+$(EXECDIR)/%: $(SCRATCHPAD)/%.cli.o $(LIBFILE)
+	$(C) -o $@ $< $(LIBFILE) $(LINKFLAGS)
+
