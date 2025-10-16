@@ -31,7 +31,7 @@ stamp="$(Z)"
 stamp="${stamp//$'\n'/}"
 
 mkdir -p "${repo_top}/scratchpad"
-out="${repo_top}/scratchpad/${repo_name}-${ref_label}-${stamp}.tar.gz"
+out="${repo_top}/scratchpad/${repo_name}_${ref_label}_${stamp}.tar.gz"
 
 # 4) create archive of HEAD (tracked files only; .gitignore’d stuff omitted)
 git -C "$repo_top" archive --format=tar --prefix="${repo_name}/" HEAD | gzip > "$out"
