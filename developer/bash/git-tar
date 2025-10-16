@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# puts a tar file of the repo in the top level scratchdir
+# puts a tar file of the repo in the top level scratchdir, filename suffixed with UTC stamp from Z
 
 set -euo pipefail
 
-# ensure we're in a git repo
+# 1) ensure we're in a git repo
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
   echo "Error: not inside a git repository." >&2
   exit 1
@@ -12,9 +12,28 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
 repo_top="$(git rev-parse --show-toplevel)"
 repo_name="$(basename "$repo_top")"
 ref_label="$(git describe --tags --always --dirty 2>/dev/null || git rev-parse --short HEAD)"
-out="${repo_top}/scratchpad/${repo_name}-${ref_label}.tar.gz"
 
-# create archive of HEAD (tracked files only; .gitignore’d stuff is omitted)
+# 2) ensure Z is available (prefer PATH; otherwise add repo-local RT-project-share path)
+if ! command -v Z >/dev/null 2>&1; then
+  z_guess="${repo_top}/tool_shared/third_party/RT-project-share/release/bash"
+  if [ -x "${z_guess}/Z" ]; then
+    PATH="${z_guess}:${PATH}"
+  else
+    echo "Error: required program 'Z' not found in PATH." >&2
+    echo "Hint: expected at '${z_guess}/Z' or ensure your env_* is sourced." >&2
+    exit 1
+  fi
+fi
+
+# 3) timestamp and output path
+stamp="$(Z)"
+# trim trailing newline just in case
+stamp="${stamp//$'\n'/}"
+
+mkdir -p "${repo_top}/scratchpad"
+out="${repo_top}/scratchpad/${repo_name}-${ref_label}-${stamp}.tar.gz"
+
+# 4) create archive of HEAD (tracked files only; .gitignore’d stuff omitted)
 git -C "$repo_top" archive --format=tar --prefix="${repo_name}/" HEAD | gzip > "$out"
 
 echo "Wrote ${out}"
