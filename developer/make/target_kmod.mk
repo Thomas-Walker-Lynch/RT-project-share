@@ -4,7 +4,9 @@
 
 SOURCE_DIR  := cc
 BUILD_DIR   := /lib/modules/$(shell uname -r)/build
-OUTPUT_DIR  := scratchpad/kmod
+
+# must be an absolute path
+OUTPUT_DIR  := $(abspath scratchpad/kmod)
 
 # authored module basenames (without .kmod.c)
 BASE_LIST   := $(patsubst %.kmod.c,%,$(notdir $(wildcard cc/*.kmod.c)))
@@ -23,7 +25,6 @@ version:
 
 .PHONY: information
 information:
-	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
 	@echo "SOURCE_DIR: " $(SOURCE_DIR)
 	@echo "BUILD_DIR: " $(BUILD_DIR)
 	@echo "OUTPUT_DIR: " $(OUTPUT_DIR)
