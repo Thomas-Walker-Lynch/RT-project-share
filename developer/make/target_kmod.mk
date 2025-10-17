@@ -27,7 +27,7 @@ information:
 	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
 	@echo "SOURCE_DIR: " $(SOURCE_DIR)
 	@echo "BUILD_DIR: " $(BUILD_DIR)
-	@echo "OUTPUT_DIR: " $(KOUTPUT_DIR)
+	@echo "OUTPUT_DIR: " $(OUTPUT_DIR)
 	@echo "BASE_LIST: " $(BASE_LIST)
 	@echo "C_SOURCE_LIST: " $(C_SOURCE_LIST)
 	@echo "TARGET_LIST: " $(TARGET_LIST)
