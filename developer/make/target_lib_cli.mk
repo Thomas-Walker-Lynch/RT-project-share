@@ -8,7 +8,7 @@
 
 # bail early if there is no compiler
 ifeq ($(C),)
-  $(error No C compiler specified.)
+  $(error target_lib_cli.mk: no C compiler specified.)
 endif
 
 # keep only the source directories that are in the file system
@@ -16,7 +16,8 @@ SRCDIR_LIST := $(wildcard $(SRCDIR_LIST))
 
 # bail early if the SRCDIR_list is empty
 ifeq ($(SRCDIR_LIST),)
-  exit
+  @printf "target_lib_cli.mk: empty SRCDIR_LIST"
+  exit 0
 endif
 
 # duplicate source file names in different directories will cause

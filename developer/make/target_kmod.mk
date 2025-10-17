@@ -6,7 +6,7 @@ SOURCE_DIR  := cc
 BUILD_DIR   := /lib/modules/$(shell uname -r)/build
 OUTPUT_DIR  := scratchpad/kmod
 
-# authored module basenames (without .mod.c)
+# authored module basenames (without .kmod.c)
 BASE_LIST   := $(patsubst %.kmod.c,%,$(notdir $(wildcard cc/*.kmod.c)))
 
 # paths in scratchpad/kmod
@@ -41,8 +41,8 @@ _prepare:
 	@mkdir -p $(OUTPUT_DIR)
 	@printf "obj-m := %s\n" "$(foreach m,$(BASE_LIST),$(m).o)" > $(OUTPUT_DIR)/Makefile
 
-# copy authored .mod.c → scratchpad/kmod/*.c (Kbuild expects sources under M)
-$(OUTPUT_DIR)/%.c: $(SOURCE_DIR)/%.mod.c | _prepare
+# copy authored .kmod.c → scratchpad/kmod/*.c (Kbuild expects sources under M)
+$(OUTPUT_DIR)/%.c: $(SOURCE_DIR)/%.kmod.c | _prepare
 	@echo "--- Preparing Kbuild Source: $@ ---"
 	cp $< $@
 
