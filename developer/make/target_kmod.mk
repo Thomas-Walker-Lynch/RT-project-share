@@ -21,8 +21,7 @@ usage:
 version:
 	@echo target_kmod version 1.0
 
-.PHONY: information,info
-info:
+.PHONY: information
 information:
 	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
 	@echo "SOURCE_DIR: " $(SOURCE_DIR)
