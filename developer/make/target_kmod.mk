@@ -1,38 +1,60 @@
-# make/targets_kmod.mk
-# make a Linux kernel module
+.SUFFIXES:
+# make/target_kmod.mk — build *.kmod.c as kernel modules
+# written for the Harmony skeleton, always invoked from cwd  $REPO_HOME/<role>
 
-ifndef REPO_HOME
-  $(error REPO_HOME is not set; build must be done in a project environment)
-endif
+SOURCE_DIR  := cc
+BUILD_DIR   := /lib/modules/$(shell uname -r)/build
+OUTPUT_DIR  := scratchpad/kmod
 
-KBUILD_BASE_List := $(basename $(notdir $(wildcard $(REPO_HOME)/developer/cc/*.mod.c)))
-KMOD_BUILD_DPath := /lib/modules/$(shell uname -r)/build
-KBUILD_OUTPUT_DIR := $(SCRATCHPAD)
+# authored module basenames (without .mod.c)
+BASE_LIST   := $(patsubst %.kmod.c,%,$(notdir $(wildcard cc/*.kmod.c)))
 
-# Basenames → kbuild objects and final .ko targets in scratchpad
-KERNEL_OBJS_M          := $(addsuffix .o, $(KBUILD_BASE_List))
-KMOD_TARGETS  := $(addsuffix .ko, $(addprefix $(KBUILD_OUTPUT_DIR)/, $(KBUILD_BASE_List)))
+# paths in scratchpad/kmod
+C_SOURCE_LIST     := $(addsuffix .c,$(addprefix $(OUTPUT_DIR)/,$(BASE_LIST)))
+TARGET_LIST       := $(addsuffix .ko,$(addprefix $(OUTPUT_DIR)/,$(BASE_LIST)))
 
 .PHONY: usage
 usage:
-	@printf "Usage: make [usage|kmod|clean]\n"; exit 2
+	@printf "Usage: make [kmod|clean]\n"
 
-# Build every module
+.PHONY: version 
+version:
+	@echo target_kmod version 1.0
+
+.PHONY: information,info
+info:
+information:
+	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
+	@echo "SOURCE_DIR: " $(SOURCE_DIR)
+	@echo "BUILD_DIR: " $(BUILD_DIR)
+	@echo "OUTPUT_DIR: " $(KOUTPUT_DIR)
+	@echo "BASE_LIST: " $(BASE_LIST)
+	@echo "C_SOURCE_LIST: " $(C_SOURCE_LIST)
+	@echo "TARGET_LIST: " $(TARGET_LIST)
+
+
 .PHONY: kmod
-kmod: $(KMOD_TARGETS)
+kmod: _prepare $(TARGET_LIST)
 
-# Link each module via kbuild (M points at project root)
-$(KBUILD_OUTPUT_DIR)/%.ko: $(KBUILD_OUTPUT_DIR)/%.c
-	@echo "--- Invoking Kbuild for Module: $* ---"
-	$(MAKE) -C $(KMOD_BUILD_DPath) M=$(REPO_HOME) O=$(KBUILD_OUTPUT_DIR) obj-m=$*.o
+.PHONY: _prepare
+_prepare:
+	@mkdir -p $(OUTPUT_DIR)
+	@printf "obj-m := %s\n" "$(foreach m,$(BASE_LIST),$(m).o)" > $(OUTPUT_DIR)/Makefile
 
-# Prepare kbuild-compatible .c in scratchpad from authored .mod.c in developer/cc
-$(KBUILD_OUTPUT_DIR)/%.c: $(REPO_HOME)/developer/cc/%.mod.c
+# copy authored .mod.c → scratchpad/kmod/*.c (Kbuild expects sources under M)
+$(OUTPUT_DIR)/%.c: $(SOURCE_DIR)/%.mod.c | _prepare
 	@echo "--- Preparing Kbuild Source: $@ ---"
 	cp $< $@
 
-# Clean kbuild artifacts (confined to scratchpad)
+# build .ko via kernel Kbuild (the 'modules' target drives the build)
+$(OUTPUT_DIR)/%.ko: $(OUTPUT_DIR)/%.c $(OUTPUT_DIR)/Makefile
+	@echo "--- Invoking Kbuild for Module: $* ---"
+	$(MAKE) -C $(BUILD_DIR) M=$(OUTPUT_DIR) modules
+
 .PHONY: clean
 clean:
-	@echo "--- Cleaning Kbuild Artifacts in $(KBUILD_OUTPUT_DIR) ---"
-	$(MAKE) -C $(KMOD_BUILD_DPath) M=$(REPO_HOME) O=$(KBUILD_OUTPUT_DIR) obj-m="$(KERNEL_OBJS_M)" clean
+	@if [ -d "$(OUTPUT_DIR)" ]; then \
+	  echo "--- Cleaning Kbuild Artifacts in $(OUTPUT_DIR) ---"; \
+	  $(MAKE) -C $(BUILD_DIR) M=$(OUTPUT_DIR) clean; \
+	fi
+

@@ -1,4 +1,6 @@
 .SUFFIXES:
+# make/target_lib_cli.mk — build *.lib.c and *.cli.c
+# written for the Harmony skeleton, always invoked from cwd  $REPO_HOME/<role>
 
 #--------------------------------------------------------------------------------
 # files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 
@@ -10,26 +12,26 @@ ifeq ($(C),)
 endif
 
 # keep only the source directories that are in the file system
-SRCDIR_List := $(wildcard $(SRCDIR_List))
+SRCDIR_LIST := $(wildcard $(SRCDIR_LIST))
 
 # bail early if the SRCDIR_list is empty
-ifeq ($(SRCDIR_List),)
-  $(error source directory found so nothing to do)
+ifeq ($(SRCDIR_LIST),)
+  exit
 endif
 
 # duplicate source file names in different directories will cause
 # problems with this makefile
 
-C_SOURCE_LIB := $(foreach dir, $(SRCDIR_List), $(wildcard $(dir)/*.lib.c))
-C_SOURCE_EXEC := $(foreach dir, $(SRCDIR_List), $(wildcard $(dir)/*.cli.c))
+C_SOURCE_LIB := $(foreach dir, $(SRCDIR_LIST), $(wildcard $(dir)/*.lib.c))
+C_SOURCE_EXEC := $(foreach dir, $(SRCDIR_LIST), $(wildcard $(dir)/*.cli.c))
 
 #remove the suffix to get base name
 C_BASE_LIB=  $(sort $(patsubst %.lib.c,  %, $(notdir $(C_SOURCE_LIB))))
 C_BASE_EXEC=  $(sort $(patsubst %.cli.c,  %, $(notdir $(C_SOURCE_EXEC))))
 
 # two sets of object files, one for the lib, and one for the command line interface progs
-OBJECT_LIB= $(patsubst %, $(SCRATCHPAD)/%.lib.o, $(C_BASE_LIB))
-OBJECT_EXEC= $(patsubst %, $(SCRATCHPAD)/%.cli.o, $(C_BASE_EXEC))
+OBJECT_LIB= $(patsubst %, scratchpad/%.lib.o, $(C_BASE_LIB))
+OBJECT_EXEC= $(patsubst %, scratchpad/%.cli.o, $(C_BASE_EXEC))
 
 -include $(OBJECT_LIB:.o=.d) $(OBJECT_EXEC:.o=.d)
 
@@ -37,7 +39,7 @@ OBJECT_EXEC= $(patsubst %, $(SCRATCHPAD)/%.cli.o, $(C_BASE_EXEC))
 EXEC= $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
 
 # the new C programming style gated sections in source instead of header filesheader
-INCFLAG_List := $(foreach dir, $(SRCDIR_List), -I $(dir))
+INCFLAG_List := $(foreach dir, $(SRCDIR_LIST), -I $(dir))
 CFLAGS += $(INCFLAG_List)
 
 #--------------------------------------------------------------------------------
@@ -60,7 +62,7 @@ version:
 .PHONY: information
 information:
 	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
-	@echo "SRCDIR_List: " $(SRCDIR_List)
+	@echo "SRCDIR_LIST: " $(SRCDIR_LIST)
 	@echo "C_SOURCE_LIB: " $(C_SOURCE_LIB)
 	@echo "C_SOURCE_EXEC: " $(C_SOURCE_EXEC)
 	@echo "C_BASE_LIB: " $(C_BASE_LIB)
@@ -96,10 +98,10 @@ clean:
 
 
 # recipes
-vpath %.c $(SRCDIR_List)
-$(SCRATCHPAD)/%.o: %.c
+vpath %.c $(SRCDIR_LIST)
+scratchpad/%.o: %.c
 	$(C) $(CFLAGS) -o $@ -c $<
 
-$(EXECDIR)/%: $(SCRATCHPAD)/%.cli.o $(LIBFILE)
+$(EXECDIR)/%: scratchpad/%.cli.o $(LIBFILE)
 	$(C) -o $@ $< $(LIBFILE) $(LINKFLAGS)
 

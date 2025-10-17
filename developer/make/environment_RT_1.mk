@@ -10,8 +10,7 @@ ECHO := printf "%b\n"
 
 
 # sources found in these subdirectories:
-SRCDIR_List=cc
-SCRATCHPAD := scratchpad
+SRCDIR_LIST=cc
 LIBDIR     := $(SCRATCHPAD)
 LIBFILE    := $(LIBDIR)/lib.a
 LINKFLAGS  := -L$(LIBDIR) -L/lib64 -L/lib
