@@ -7,7 +7,7 @@ endif
 
 KBUILD_BASE_List := $(basename $(notdir $(wildcard $(REPO_HOME)/developer/cc/*.mod.c)))
 KMOD_BUILD_DPath := /lib/modules/$(shell uname -r)/build
-KBUILD_OUTPUT_DIR := $(REPO_HOME)/$(SCRATCHPAD)
+KBUILD_OUTPUT_DIR := $(SCRATCHPAD)
 
 # Basenames → kbuild objects and final .ko targets in scratchpad
 KERNEL_OBJS_M          := $(addsuffix .o, $(KBUILD_BASE_List))

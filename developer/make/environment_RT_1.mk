@@ -11,12 +11,11 @@ ECHO := printf "%b\n"
 
 # sources found in these subdirectories:
 SRCDIR_List=cc
-
-LIBDIR=scratchpad
-EXECDIR=machine
-SCRATCHPAD=scratchpad
-
-LIBFILE=$(SCRATCHPAD)/lib.a
+SCRATCHPAD := scratchpad
+LIBDIR     := $(SCRATCHPAD)
+LIBFILE    := $(LIBDIR)/lib.a
+LINKFLAGS  := -L$(LIBDIR) -L/lib64 -L/lib
+EXECDIR    := $(SCRATCHPAD)
 
 C=gcc
 CFLAGS=-std=gnu11 -Wall -Wextra -Wpedantic -finput-charset=UTF-8
