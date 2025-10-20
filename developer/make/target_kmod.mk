@@ -58,3 +58,29 @@ clean:
 	  $(MAKE) -C $(BUILD_DIR) M=$(OUTPUT_DIR) clean; \
 	fi
 
+-----
+# add this near BASE_LIST
+ALL_C := $(addsuffix .c,$(addprefix $(OUTPUT_DIR)/,$(BASE_LIST)))
+
+.PHONY: kmod
+# build everything in one go
+kmod: _prepare modules
+
+.PHONY: _prepare
+_prepare:
+	@mkdir -p $(OUTPUT_DIR)
+	@printf "obj-m := %s\n" "$(foreach m,$(BASE_LIST),$(m).o)" > $(OUTPUT_DIR)/Makefile
+	@for b in $(BASE_LIST); do \
+	  src="$(SOURCE_DIR)/$$b.kmod.c"; dst="$(OUTPUT_DIR)/$$b.c"; \
+	  echo "--- Preparing Kbuild Source: $$dst ---"; \
+	  ln -s $$src $$dst; \
+	done
+
+.PHONY: modules
+modules: $(OUTPUT_DIR)/Makefile $(ALL_C)
+	@echo "--- Invoking Kbuild for Modules: $(BASE_LIST) ---"
+	$(MAKE) -C $(BUILD_DIR) M=$(OUTPUT_DIR) modules
+
+# optional: keep these as no-ops so 'make …/foo.ko' still succeeds
+$(OUTPUT_DIR)/%.ko: modules
+	@true
