@@ -79,7 +79,7 @@ NEED_LIB := $(strip $(OBJECT_LIB))
 LIB_ARG  := $(if $(NEED_LIB),$(LIBFILE),)   # expands to lib path only when needed
 
 .PHONY: library
-library: $(if $(NEED_LIB),$(LIBFILE),.remove_lib_if_exists
+library: $(if $(NEED_LIB),$(LIBFILE),.remove_lib_if_exists)
 
 .PHONY: .remove_lib_if_exists
 .remove_lib_if_exists:
