@@ -8,17 +8,15 @@
 # files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 
 #
 
-# warn if there is no compiler
-ifeq ($(C),)
-  @printf "target_lib_cli.mk: no C compiler specified.\n"
+ifeq ($(strip $(C)),)
+  $(error target_lib_cli.mk: no C compiler specified)
 endif
 
 # keep only the source directories that are in the file system
 SRCDIR_LIST := $(wildcard $(SRCDIR_LIST))
 
-# warn if the SRCDIR_list is empty
-ifeq ($(SRCDIR_LIST),)
-  @printf "target_lib_cli.mk: empty SRCDIR_LIST\n"
+ifeq ($(strip $(SRCDIR_LIST)),)
+  $(warning target_lib_cli.mk: empty SRCDIR_LIST)
 endif
 
 # duplicate source file names in different directories will cause
@@ -74,8 +72,26 @@ information:
 	@echo "EXEC: " $(EXEC)
 	@echo "INCFLAG_List: " $(INCFLAG_List)
 
+#.PHONY: library
+#library: $(LIBFILE) 
+
+NEED_LIB := $(strip $(OBJECT_LIB))
+LIB_ARG  := $(if $(NEED_LIB),$(LIBFILE),)   # expands to lib path only when needed
+
 .PHONY: library
-library: $(LIBFILE) 
+library: $(if $(NEED_LIB),$(LIBFILE),.remove_lib_if_exists)
+
+ifneq ($(NEED_LIB),)
+$(LIBFILE): $(OBJECT_LIB)
+	@echo "ar rcs $@ $^"
+	ar rcs $@ $^
+endif
+
+ifeq ($(NEED_LIB),)
+$(LIBFILE):
+	@rm -f $(LIBFILE)
+endif
+
 
 #$(LIBFILE): $(OBJECT_LIB) $(DEPFILE)
 $(LIBFILE): $(OBJECT_LIB)
@@ -90,8 +106,12 @@ $(LIBFILE): $(OBJECT_LIB)
 #.PHONY: sub_cli
 #sub_cli: $(EXEC)
 
+#.PHONY: cli
+#cli: $(LIBFILE) $(EXEC)
+
 .PHONY: cli
-cli: $(LIBFILE) $(EXEC)
+cli: library $(EXEC)
+
 
 
 # generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
@@ -108,6 +128,9 @@ vpath %.c $(SRCDIR_LIST)
 scratchpad/%.o: %.c
 	$(C) $(CFLAGS) -o $@ -c $<
 
-$(EXECDIR)/%: scratchpad/%.cli.o $(LIBFILE)
-	$(C) -o $@ $< $(LIBFILE) $(LINKFLAGS)
+#$(EXECDIR)/%: scratchpad/%.cli.o $(LIBFILE)
+#	$(C) -o $@ $< $(LIBFILE) $(LINKFLAGS)
+
+$(EXECDIR)/%: scratchpad/%.cli.o
+	$(C) -o $@ $< $(LIB_ARG) $(LINKFLAGS)
 
