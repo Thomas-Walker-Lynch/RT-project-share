@@ -6,7 +6,7 @@
 # files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 
 #
 
-# warn if there is no compiler
+# bail early if there is no compiler
 ifeq ($(C),)
   @printf "target_lib_cli.mk: no C compiler specified.\n"
 endif
@@ -14,7 +14,7 @@ endif
 # keep only the source directories that are in the file system
 SRCDIR_LIST := $(wildcard $(SRCDIR_LIST))
 
-# warn if the SRCDIR_list is empty
+# bail early if the SRCDIR_list is empty
 ifeq ($(SRCDIR_LIST),)
   @printf "target_lib_cli.mk: empty SRCDIR_LIST\n"
 endif
