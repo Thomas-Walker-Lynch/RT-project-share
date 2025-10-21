@@ -80,13 +80,17 @@ $(LIBFILE): $(OBJECT_LIB)
 	ar rcs $(LIBFILE) $(OBJECT_LIB)
 
 
-.PHONY: cli
+#.PHONY: cli
 #cli: $(LIBFILE) $(DEPFILE)
-cli: $(LIBFILE)
-	make sub_cli
+#cli: $(LIBFILE)
+#	make sub_cli
 
-.PHONY: sub_cli
-sub_cli: $(EXEC)
+#.PHONY: sub_cli
+#sub_cli: $(EXEC)
+
+.PHONY: cli
+cli: $(LIBFILE) $(EXEC)
+
 
 # generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
 
