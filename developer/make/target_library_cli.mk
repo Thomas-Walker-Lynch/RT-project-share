@@ -1,6 +1,8 @@
-.SUFFIXES:
 # make/target_lib_cli.mk — build *.lib.c and *.cli.c
 # written for the Harmony skeleton, always invoked from cwd  $REPO_HOME/<role>
+
+.SUFFIXES:
+.EXPORT_ALL_VARIABLES:
 
 #--------------------------------------------------------------------------------
 # files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 

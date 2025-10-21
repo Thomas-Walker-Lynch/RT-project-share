@@ -13,7 +13,7 @@ ECHO := printf "%b\n"
 SRCDIR_List=cc
 
 LIBDIR=scratchpad
-EXECDIR=machine
+EXECDIR=scratchpad
 TMPDIR=scratchpad
 
 DEPFILE=$(TMPDIR)/makefile-cc.deps
