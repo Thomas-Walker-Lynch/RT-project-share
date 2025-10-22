@@ -3,6 +3,7 @@
 
 .SUFFIXES:
 .EXPORT_ALL_VARIABLES:
+.DELETE_ON_ERROR:
 
 #--------------------------------------------------------------------------------
 # files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 
@@ -12,35 +13,35 @@ ifeq ($(strip $(C)),)
   $(error target_lib_cli.mk: no C compiler specified)
 endif
 
-# keep only the source directories that are in the file system
-SRCDIR_LIST := $(wildcard $(SRCDIR_LIST))
+# single source directory
+C_SOURCE_DIR ?= cc
+C_SOURCE_DIR_OK := $(wildcard $(C_SOURCE_DIR))
 
-ifeq ($(strip $(SRCDIR_LIST)),)
-  $(warning target_lib_cli.mk: empty SRCDIR_LIST)
+ifeq ($(strip $(C_SOURCE_DIR_OK)),)
+  $(warning target_lib_cli.mk: C_SOURCE_DIR '$(C_SOURCE_DIR)' not found or empty)
 endif
 
-# duplicate source file names in different directories will cause
-# problems with this makefile
+# RT uses header integrated C source files
+CFLAGS ?= -I $(C_SOURCE_DIR)
 
-C_SOURCE_LIB := $(foreach dir, $(SRCDIR_LIST), $(wildcard $(dir)/*.lib.c))
-C_SOURCE_EXEC := $(foreach dir, $(SRCDIR_LIST), $(wildcard $(dir)/*.cli.c))
+# source discovery (single dir)
+C_SOURCE_LIB  := $(wildcard $(C_SOURCE_DIR)/*.lib.c)
+C_SOURCE_EXEC := $(wildcard $(C_SOURCE_DIR)/*.cli.c)
 
-#remove the suffix to get base name
-C_BASE_LIB=  $(sort $(patsubst %.lib.c,  %, $(notdir $(C_SOURCE_LIB))))
-C_BASE_EXEC=  $(sort $(patsubst %.cli.c,  %, $(notdir $(C_SOURCE_EXEC))))
+# remove suffix to get base name
+C_BASE_LIB  := $(sort $(patsubst %.lib.c,%, $(notdir $(C_SOURCE_LIB))))
+C_BASE_EXEC := $(sort $(patsubst %.cli.c,%, $(notdir $(C_SOURCE_EXEC))))
 
-# two sets of object files, one for the lib, and one for the command line interface progs
-OBJECT_LIB= $(patsubst %, scratchpad/%.lib.o, $(C_BASE_LIB))
-OBJECT_EXEC= $(patsubst %, scratchpad/%.cli.o, $(C_BASE_EXEC))
+
+# two sets of object files, one for the lib, and one for the CLI programs
+OBJECT_LIB  := $(patsubst %, scratchpad/%.lib.o, $(C_BASE_LIB))
+OBJECT_EXEC := $(patsubst %, scratchpad/%.cli.o, $(C_BASE_EXEC))
 
 -include $(OBJECT_LIB:.o=.d) $(OBJECT_EXEC:.o=.d)
 
 # executables are made from EXEC sources
-EXEC= $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
+EXEC := $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
 
-# the new C programming style gated sections in source instead of header filesheader
-INCFLAG_List := $(foreach dir, $(SRCDIR_LIST), -I $(dir))
-CFLAGS += $(INCFLAG_List)
 
 #--------------------------------------------------------------------------------
 # targets
@@ -62,7 +63,7 @@ version:
 .PHONY: information
 information:
 	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
-	@echo "SRCDIR_LIST: " $(SRCDIR_LIST)
+	@echo "C_SOURCE_DIR: " $(C_SOURCE_DIR)
 	@echo "C_SOURCE_LIB: " $(C_SOURCE_LIB)
 	@echo "C_SOURCE_EXEC: " $(C_SOURCE_EXEC)
 	@echo "C_BASE_LIB: " $(C_BASE_LIB)
@@ -72,50 +73,22 @@ information:
 	@echo "EXEC: " $(EXEC)
 	@echo "INCFLAG_List: " $(INCFLAG_List)
 
-#.PHONY: library
-#library: $(LIBFILE) 
-
-NEED_LIB := $(strip $(OBJECT_LIB))
-LIB_ARG  := $(if $(NEED_LIB),$(LIBFILE),)   # expands to lib path only when needed
-
 .PHONY: library
-library: $(if $(NEED_LIB),$(LIBFILE),.remove_lib_if_exists)
+library: $(LIBFILE)
 
-.PHONY: .remove_lib_if_exists
-.remove_lib_if_exists:
-	@rm -f $(LIBFILE)
-
-ifneq ($(NEED_LIB),)
 $(LIBFILE): $(OBJECT_LIB)
-	@echo "ar rcs $@ $^"
-	ar rcs $@ $^
-endif
-
-ifeq ($(NEED_LIB),)
-$(LIBFILE):
-	@rm -f $(LIBFILE)
-endif
-
-
-#$(LIBFILE): $(OBJECT_LIB) $(DEPFILE)
-$(LIBFILE): $(OBJECT_LIB)
-	ar rcs $(LIBFILE) $(OBJECT_LIB)
-
-
-#.PHONY: cli
-#cli: $(LIBFILE) $(DEPFILE)
-#cli: $(LIBFILE)
-#	make sub_cli
-
-#.PHONY: sub_cli
-#sub_cli: $(EXEC)
+	@if [ -s "$@" ] || [ -n "$(OBJECT_LIB)" ]; then \
+		echo "ar rcs $@ $^"; \
+		ar rcs $@ $^; \
+	else \
+		rm -f "$@"; \
+	fi   
 
 #.PHONY: cli
 #cli: $(LIBFILE) $(EXEC)
 
 .PHONY: cli
 cli: library $(EXEC)
-
 
 
 # generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
@@ -128,12 +101,8 @@ clean:
 
 
 # recipes
-vpath %.c $(SRCDIR_LIST)
-scratchpad/%.o: %.c
+scratchpad/%.o: $(C_SOURCE_DIR)/%.c
 	$(C) $(CFLAGS) -o $@ -c $<
-
-#$(EXECDIR)/%: scratchpad/%.cli.o $(LIBFILE)
-#	$(C) -o $@ $< $(LIBFILE) $(LINKFLAGS)
 
 $(EXECDIR)/%: scratchpad/%.cli.o
 	$(C) -o $@ $< $(LIB_ARG) $(LINKFLAGS)
