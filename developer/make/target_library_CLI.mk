@@ -1,46 +1,47 @@
-# make/target_lib_cli.mk — build *.lib.c and *.cli.c
+# make/target_lib_CLI.mk — build *.lib.c and *.CLI.c
 # written for the Harmony skeleton, always invoked from cwd  $REPO_HOME/<role>
+# files have two suffixes by convention, e.g.: X.lib.c or Y.CLI.c 
 
 .SUFFIXES:
 .EXPORT_ALL_VARIABLES:
 .DELETE_ON_ERROR:
 
 #--------------------------------------------------------------------------------
-# files have two suffixes by convention, e.g.: X.lib.c or Y.cli.c 
-#
+# defaults for environment variables
+
+C              ?= gcc
+CFLAGS         ?=
+C_SOURCE_DIR   ?= cc
+LIBRARY_FILE   ?=
+MACHINE_DIR    ?= scratchpad
+LN_FLAGS       ?=
 
 ifeq ($(strip $(C)),)
-  $(error target_lib_cli.mk: no C compiler specified)
+  $(error target_lib_CLI.mk: no C compiler specified)
 endif
 
-# single source directory
-C_SOURCE_DIR ?= cc
-C_SOURCE_DIR_OK := $(wildcard $(C_SOURCE_DIR))
-
-ifeq ($(strip $(C_SOURCE_DIR_OK)),)
-  $(warning target_lib_cli.mk: C_SOURCE_DIR '$(C_SOURCE_DIR)' not found or empty)
-endif
-
-# RT uses header integrated C source files
-CFLAGS ?= -I $(C_SOURCE_DIR)
+#--------------------------------------------------------------------------------
+# derived variables
 
 # source discovery (single dir)
 C_SOURCE_LIB  := $(wildcard $(C_SOURCE_DIR)/*.lib.c)
-C_SOURCE_EXEC := $(wildcard $(C_SOURCE_DIR)/*.cli.c)
+C_SOURCE_EXEC := $(wildcard $(C_SOURCE_DIR)/*.CLI.c)
 
 # remove suffix to get base name
 C_BASE_LIB  := $(sort $(patsubst %.lib.c,%, $(notdir $(C_SOURCE_LIB))))
-C_BASE_EXEC := $(sort $(patsubst %.cli.c,%, $(notdir $(C_SOURCE_EXEC))))
-
+C_BASE_EXEC := $(sort $(patsubst %.CLI.c,%, $(notdir $(C_SOURCE_EXEC))))
 
 # two sets of object files, one for the lib, and one for the CLI programs
 OBJECT_LIB  := $(patsubst %, scratchpad/%.lib.o, $(C_BASE_LIB))
-OBJECT_EXEC := $(patsubst %, scratchpad/%.cli.o, $(C_BASE_EXEC))
-
--include $(OBJECT_LIB:.o=.d) $(OBJECT_EXEC:.o=.d)
+OBJECT_EXEC := $(patsubst %, scratchpad/%.CLI.o, $(C_BASE_EXEC))
 
 # executables are made from EXEC sources
-EXEC := $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
+EXEC := $(patsubst %, $(MACHINE_DIR)/%, $(C_BASE_EXEC))
+
+#--------------------------------------------------------------------------------
+# pull in dependencies
+
+-include $(OBJECT_LIB:.o=.d) $(OBJECT_EXEC:.o=.d)
 
 
 #--------------------------------------------------------------------------------
@@ -51,8 +52,8 @@ EXEC := $(patsubst %, $(EXECDIR)/%, $(C_BASE_EXEC))
 usage:
 	@echo example usage: make clean
 	@echo example usage: make library
-	@echo example usage: make cli
-	@echo example usage: make library cli
+	@echo example usage: make CLI
+	@echo example usage: make library CLI
 
 .PHONY: version
 version:
@@ -71,12 +72,11 @@ information:
 	@echo "OBJECT_LIB: " $(OBJECT_LIB)
 	@echo "OBJECT_EXEC: " $(OBJECT_EXEC)
 	@echo "EXEC: " $(EXEC)
-	@echo "INCFLAG_List: " $(INCFLAG_List)
 
 .PHONY: library
-library: $(LIBFILE)
+library: $(LIBRARY_FILE)
 
-$(LIBFILE): $(OBJECT_LIB)
+$(LIBRARY_FILE): $(OBJECT_LIB)
 	@if [ -s "$@" ] || [ -n "$(OBJECT_LIB)" ]; then \
 		echo "ar rcs $@ $^"; \
 		ar rcs $@ $^; \
@@ -84,18 +84,18 @@ $(LIBFILE): $(OBJECT_LIB)
 		rm -f "$@"; \
 	fi   
 
-#.PHONY: cli
-#cli: $(LIBFILE) $(EXEC)
+#.PHONY: CLI
+#CLI: $(LIBRARY_FILE) $(EXEC)
 
-.PHONY: cli
-cli: library $(EXEC)
+.PHONY: CLI
+CLI: library $(EXEC)
 
 
 # generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
 
 .PHONY: clean
 clean:
-	rm -f $(LIBFILE)
+	rm -f $(LIBRARY_FILE)
 	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj $${obj%.o}.d || true; done
 	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done
 
@@ -104,6 +104,6 @@ clean:
 scratchpad/%.o: $(C_SOURCE_DIR)/%.c
 	$(C) $(CFLAGS) -o $@ -c $<
 
-$(EXECDIR)/%: scratchpad/%.cli.o
-	$(C) -o $@ $< $(LIB_ARG) $(LINKFLAGS)
+$(MACHINE_DIR)/%: scratchpad/%.CLI.o
+	$(C) -o $@ $< $(LN_FLAGS)
 

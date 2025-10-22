@@ -63,8 +63,10 @@ $(OUTPUT_DIR):
 	@mkdir -p "$(OUTPUT_DIR)"
 
 # generate the Kbuild control Makefile
+# generate the Kbuild control Makefile
 $(OUTPUT_DIR)/Makefile: | $(OUTPUT_DIR)
 	@{ \
+	  printf "ccflags-y += %s\n" "$(KMOD_CCFLAGS)"; \
 	  printf "obj-m := %s\n" "$(foreach m,$(BASE_LIST),$(m).o)"; \
 	  for m in $(BASE_LIST); do \
 	    printf "%s-objs := %s.kmod.o" "$$m" "$$m"; \

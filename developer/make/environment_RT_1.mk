@@ -1,3 +1,4 @@
+# enviroment_RT_1.mk
 # makefile environment variable defaults.
 # cc is the name of the C compiler, a file called <name>.c is C source code.
 # RT uses header integrated C source files, i.e. the source and the header are the same file
@@ -18,13 +19,13 @@ CFLAGS           += -I $(C_SOURCE_DIR)
 
 KMOD_CCFLAGS    := -I $(KMOD_SOURCE_DIR)
 
-LIBNAME         := $(PROJECT)
-LIBNAME         := $(subst -,_,$(LIBNAME))
+LIBRARY_NAME    := $(PROJECT)
+LIBRARY_NAME    := $(subst -,_,$(LIBRARY_NAME))
 
-LIBDIR          := scratchpad
-LIBFILE         := $(LIBDIR)/lib$(LIBNAME).a
+LIBRARY_DIR     := scratchpad
+LIBRARY_FILE    := $(LIBRARY_DIR)/lib$(LIBRARY_NAME).a
 
-LINKFLAGS       := -L$(LIBDIR) -L/lib64 -L/lib
+LN_FLAGS        := -L$(LIBRARY_DIR) -L/lib64 -L/lib
 
-EXECDIR         := scratchpad
+MACHINE_DIR     := scratchpad
 
