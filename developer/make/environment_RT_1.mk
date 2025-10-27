@@ -10,14 +10,10 @@ SHELL=/bin/bash
 ECHO := printf "%b\n"
 
 C_SOURCE_DIR     := cc
-KMOD_SOURCE_DIR  := cc
-
 C                := gcc
 CFLAGS           := -std=gnu11 -Wall -Wextra -Wpedantic -finput-charset=UTF-8
 CFLAGS           += -MMD -MP
 CFLAGS           += -I $(C_SOURCE_DIR)
-
-KMOD_CCFLAGS    := -I $(KMOD_SOURCE_DIR)
 
 LIBRARY_NAME    := $(PROJECT)
 LIBRARY_NAME    := $(subst -,_,$(LIBRARY_NAME))
@@ -28,4 +24,7 @@ LIBRARY_FILE    := $(LIBRARY_DIR)/lib$(LIBRARY_NAME).a
 LN_FLAGS        := -L$(LIBRARY_DIR) -L/lib64 -L/lib
 
 MACHINE_DIR     := scratchpad
+
+KMOD_SOURCE_DIR  := cc
+KMOD_CCFLAGS    := -I $(KMOD_SOURCE_DIR)
 
