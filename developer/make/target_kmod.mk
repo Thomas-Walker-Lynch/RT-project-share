@@ -9,7 +9,7 @@
 # defaults for environment variables (override from outer make/env as needed)
 
 # Kernel build tree, which is part of the Linux system, use running kernel if unset
-KMOD_BUILD_DIR  ?=
+KMOD_BUILD_DIR  ?= /lib/modules/$(shell uname -r)/build
 
 # Authored source directory (single dir)
 KMOD_SOURCE_DIR ?= cc
@@ -17,23 +17,25 @@ KMOD_SOURCE_DIR ?= cc
 # Extra compiler flags passed to Kbuild (e.g., -I $(KMOD_SOURCE_DIR))
 KMOD_CCFLAGS ?= 
 
-# Staging/output directory for Kbuild
-KMOD_OUTPUT_DIR ?= scratchpad/kmod
-
 # Include *.lib.c into modules (1=yes, 0=no)
 KMOD_INCLUDE_LIB ?= 1
 
+# KMOD_OUTPUT_DIR is constrained, relative path, on the scratchpad, and ends in kmod
+# Require: non-empty, relative, no '..', ends with 'kmod' dir
+define assert_kmod_output_dir_ok
+  $(if $(strip $(1)),,$(error KMOD_OUTPUT_DIR is empty))
+  $(if $(filter /%,$(1)),$(error KMOD_OUTPUT_DIR must be relative: '$(1)'),)
+  $(if $(filter %/../% ../% %/.. ..,$(1)),$(error KMOD_OUTPUT_DIR must not contain '..': '$(1)'),)
+  $(if $(filter %/kmod %/kmod/ kmod,$(1)),,$(error KMOD_OUTPUT_DIR must end with 'kmod': '$(1)'))
+endef
+KMOD_OUTPUT_DIR ?= scratchpad/kmod
+$(eval $(call assert_kmod_output_dir_ok,$(KMOD_OUTPUT_DIR)))
 
-
+# The kernel make needs and absolute path to find the output directory
+ABS_KMOD_OUTPUT_DIR := $(CURDIR)/$(KMOD_OUTPUT_DIR)
 
 #--------------------------------------------------------------------------------
 # derived variables (computed from the above)
-
-# Canonicalize output dir
-kmod_output_dir := $(abspath $(KMOD_OUTPUT_DIR))
-
-# Select kernel build dir (cross or running kernel)
-kmod_build_dir := $(if $(KMOD_BUILD_DIR),$(KMOD_BUILD_DIR),/lib/modules/$(shell uname -r)/build)
 
 # Authored basenames (without suffix)
 base_list := $(patsubst %.kmod.c,%,$(notdir $(wildcard $(KMOD_SOURCE_DIR)/*.kmod.c)))
@@ -46,8 +48,8 @@ lib_base :=
 endif
 
 # Staged sources (kept namespaced to prevent .o collisions)
-all_kmod_c := $(addsuffix .kmod.c,$(addprefix $(kmod_output_dir)/,$(base_list)))
-all_lib_c  := $(addsuffix .lib.c,$(addprefix $(kmod_output_dir)/,$(lib_base)))
+all_kmod_c := $(addsuffix .kmod.c,$(addprefix $(KMOD_OUTPUT_DIR)/,$(base_list)))
+all_lib_c  := $(addsuffix .lib.c,$(addprefix $(KMOD_OUTPUT_DIR)/,$(lib_base)))
 
 
 
@@ -65,9 +67,8 @@ version:
 .PHONY: information
 information:
 	@echo "KMOD_SOURCE_DIR:   " $(KMOD_SOURCE_DIR)
-	@echo "kmod_build_dir:    " $(kmod_build_dir)
+	@echo "KMOD_BUILD_DIR:    " $(KMOD_BUILD_DIR)
 	@echo "KMOD_OUTPUT_DIR:   " $(KMOD_OUTPUT_DIR)
-	@echo "kmod_output_dir:   " $(kmod_output_dir)
 	@echo "base_list:    " $(base_list)
 	@echo "lib_base:     " $(lib_base)
 	@echo "all_kmod_c:   " $(all_kmod_c)
@@ -82,11 +83,11 @@ endif
 # --- Parallel-safe preparation as real targets ---
 
 # ensure the staging dir exists (order-only prereq)
-$(kmod_output_dir):
-	@mkdir -p "$(kmod_output_dir)"
+$(KMOD_OUTPUT_DIR):
+	@mkdir -p "$(KMOD_OUTPUT_DIR)"
 
 # generate the Kbuild control Makefile
-$(kmod_output_dir)/Makefile: | $(kmod_output_dir)
+$(KMOD_OUTPUT_DIR)/Makefile: | $(KMOD_OUTPUT_DIR)
 	@{ \
 	  printf "ccflags-y += %s\n" "$(KMOD_CCFLAGS)"; \
 	  printf "obj-m := %s\n" "$(foreach m,$(base_list),$(m).o)"; \
@@ -98,46 +99,26 @@ $(kmod_output_dir)/Makefile: | $(kmod_output_dir)
 	} > "$@"
 
 # stage kmod sources (one rule per file; parallelizable)
-$(kmod_output_dir)/%.kmod.c: $(KMOD_SOURCE_DIR)/%.kmod.c | $(kmod_output_dir)
+$(KMOD_OUTPUT_DIR)/%.kmod.c: $(KMOD_SOURCE_DIR)/%.kmod.c | $(KMOD_OUTPUT_DIR)
 	@echo "--- Stage: $@ ---"
 	@ln -sf "$<" "$@" 2>/dev/null || { rm -f "$@"; cp "$<" "$@"; }
 
 # stage library sources (optional; also parallelizable)
-$(kmod_output_dir)/%.lib.c: $(KMOD_SOURCE_DIR)/%.lib.c | $(kmod_output_dir)
+$(KMOD_OUTPUT_DIR)/%.lib.c: $(KMOD_SOURCE_DIR)/%.lib.c | $(KMOD_OUTPUT_DIR)
 	@echo "--- Stage: $@ ---"
 	@ln -sf "$<" "$@" 2>/dev/null || { rm -f "$@"; cp "$<" "$@"; }
 
-# rebuild inputs for 'modules'
-.PHONY: modules
-modules: $(kmod_output_dir)/Makefile $(all_kmod_c) $(all_lib_c)
-	@echo "--- Invoking Kbuild for Modules: $(base_list) ---"
-	$(MAKE) -C "$(kmod_build_dir)" M="$(kmod_output_dir)" modules
-
-# top-level convenience target
 .PHONY: kmod
-kmod: modules
-
+kmod: $(KMOD_OUTPUT_DIR)/Makefile $(all_kmod_c) $(all_lib_c)
+	@echo "--- Invoking Kbuild for kmod: $(base_list) ---"
+	$(MAKE) -C "$(KMOD_BUILD_DIR)" M="$(ABS_KMOD_OUTPUT_DIR)" modules
 
 # quality-of-life: allow 'make scratchpad/kmod/foo.ko' after batch build
-$(kmod_output_dir)/%.ko: modules
+$(KMOD_OUTPUT_DIR)/%.ko: kmod
 	@true
 
 .PHONY: clean
 clean:
-	@if [ -d "$(kmod_output_dir)" ]; then \
-	  echo "--- Cleaning Kbuild Artifacts in $(kmod_output_dir) ---"; \
-	  $(MAKE) -C "$(kmod_build_dir)" M="$(kmod_output_dir)" clean; \
-	  rm -f  "$(kmod_output_dir)"/*.o \
-	         "$(kmod_output_dir)"/*.ko \
-	         "$(kmod_output_dir)"/*.mod \
-	         "$(kmod_output_dir)"/*.mod.c \
-	         "$(kmod_output_dir)"/modules.order \
-	         "$(kmod_output_dir)"/Module.symvers \
-	         "$(kmod_output_dir)"/.*.cmd 2>/dev/null || true; \
-	  rm -rf "$(kmod_output_dir)"/.tmp_versions 2>/dev/null || true; \
-	  find   "$(kmod_output_dir)" -maxdepth 1 -type l -name '*.kmod.c' -delete 2>/dev/null || true; \
-	  find   "$(kmod_output_dir)" -maxdepth 1 -type l -name '*.lib.c'  -delete 2>/dev/null || true; \
-	  find   "$(kmod_output_dir)" -maxdepth 1 -type f -name '*.kmod.c' -delete 2>/dev/null || true; \
-	  find   "$(kmod_output_dir)" -maxdepth 1 -type f -name '*.lib.c'  -delete 2>/dev/null || true; \
-	  rmdir "$(kmod_output_dir)" || true; \
-	fi
+	@echo "--- Cleaning Kbuild Artifacts in $(KMOD_OUTPUT_DIR) ---"
+	@$(MAKE) -C "$(KMOD_BUILD_DIR)" M="$(ABS_KMOD_OUTPUT_DIR)" clean >/dev/null 2>&1 || true
+	@rm -rf -- "$(KMOD_OUTPUT_DIR)"

@@ -27,4 +27,4 @@ MACHINE_DIR     := scratchpad
 
 KMOD_SOURCE_DIR  := cc
 KMOD_CCFLAGS    := -I $(KMOD_SOURCE_DIR)
-
+KMOD_OUTPUT_DIR := scratchpad
