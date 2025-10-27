@@ -15,7 +15,6 @@ KMOD_BUILD_DIR  ?=
 KMOD_SOURCE_DIR ?= cc
 
 # Extra compiler flags passed to Kbuild (e.g., -I $(KMOD_SOURCE_DIR))
-# RT uses unified header/source files
 KMOD_CCFLAGS ?= 
 
 # Staging/output directory for Kbuild
