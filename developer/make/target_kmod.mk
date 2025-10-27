@@ -101,17 +101,22 @@ $(KMOD_OUTPUT_DIR)/Makefile: | $(KMOD_OUTPUT_DIR)
 # stage kmod sources (one rule per file; parallelizable)
 $(KMOD_OUTPUT_DIR)/%.kmod.c: $(KMOD_SOURCE_DIR)/%.kmod.c | $(KMOD_OUTPUT_DIR)
 	@echo "--- Stage: $@ ---"
-	@ln -sf "$<" "$@" 2>/dev/null || { rm -f "$@"; cp "$<" "$@"; }
+	@cp -f "$(abspath $<)" "$@"
 
 # stage library sources (optional; also parallelizable)
 $(KMOD_OUTPUT_DIR)/%.lib.c: $(KMOD_SOURCE_DIR)/%.lib.c | $(KMOD_OUTPUT_DIR)
 	@echo "--- Stage: $@ ---"
-	@ln -sf "$<" "$@" 2>/dev/null || { rm -f "$@"; cp "$<" "$@"; }
+	@cp -f "$(abspath $<)" "$@"
+
 
 .PHONY: kmod
 kmod: $(KMOD_OUTPUT_DIR)/Makefile $(all_kmod_c) $(all_lib_c)
+ifeq ($(strip $(base_list)),)
+	@echo "--- No kmod sources; nothing to do ---"
+else
 	@echo "--- Invoking Kbuild for kmod: $(base_list) ---"
 	$(MAKE) -C "$(KMOD_BUILD_DIR)" M="$(ABS_KMOD_OUTPUT_DIR)" modules
+endif
 
 # quality-of-life: allow 'make scratchpad/kmod/foo.ko' after batch build
 $(KMOD_OUTPUT_DIR)/%.ko: kmod
