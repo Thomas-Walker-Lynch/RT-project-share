@@ -127,7 +127,6 @@ clean:
 	@if [ -d "$(kmod_output_dir)" ]; then \
 	  echo "--- Cleaning Kbuild Artifacts in $(kmod_output_dir) ---"; \
 	  $(MAKE) -C "$(kmod_build_dir)" M="$(kmod_output_dir)" clean; \
-	  # belt & suspenders: nuke common leftovers regardless of Kbuild's behavior
 	  rm -f  "$(kmod_output_dir)"/*.o \
 	         "$(kmod_output_dir)"/*.ko \
 	         "$(kmod_output_dir)"/*.mod \
@@ -136,7 +135,6 @@ clean:
 	         "$(kmod_output_dir)"/Module.symvers \
 	         "$(kmod_output_dir)"/.*.cmd 2>/dev/null || true; \
 	  rm -rf "$(kmod_output_dir)"/.tmp_versions 2>/dev/null || true; \
-	  # remove staged sources we created (symlinks or copies)
 	  find   "$(kmod_output_dir)" -maxdepth 1 -type l -name '*.kmod.c' -delete 2>/dev/null || true; \
 	  find   "$(kmod_output_dir)" -maxdepth 1 -type l -name '*.lib.c'  -delete 2>/dev/null || true; \
 	  find   "$(kmod_output_dir)" -maxdepth 1 -type f -name '*.kmod.c' -delete 2>/dev/null || true; \
