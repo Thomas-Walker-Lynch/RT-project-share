@@ -3,7 +3,6 @@
 # files have two suffixes by convention, e.g.: X.lib.c or Y.CLI.c 
 
 .SUFFIXES:
-.EXPORT_ALL_VARIABLES:
 .DELETE_ON_ERROR:
 
 #--------------------------------------------------------------------------------
@@ -16,32 +15,28 @@ LIBRARY_FILE   ?=
 MACHINE_DIR    ?= scratchpad
 LN_FLAGS       ?=
 
-ifeq ($(strip $(C)),)
-  $(error target_lib_CLI.mk: no C compiler specified)
-endif
-
 #--------------------------------------------------------------------------------
 # derived variables
 
 # source discovery (single dir)
-C_SOURCE_LIB  := $(wildcard $(C_SOURCE_DIR)/*.lib.c)
-C_SOURCE_EXEC := $(wildcard $(C_SOURCE_DIR)/*.CLI.c)
+c_source_lib  := $(wildcard $(C_SOURCE_DIR)/*.lib.c)
+c_source_exec := $(wildcard $(C_SOURCE_DIR)/*.CLI.c)
 
 # remove suffix to get base name
-C_BASE_LIB  := $(sort $(patsubst %.lib.c,%, $(notdir $(C_SOURCE_LIB))))
-C_BASE_EXEC := $(sort $(patsubst %.CLI.c,%, $(notdir $(C_SOURCE_EXEC))))
+c_base_lib  := $(sort $(patsubst %.lib.c,%, $(notdir $(c_source_lib))))
+c_base_exec := $(sort $(patsubst %.CLI.c,%, $(notdir $(c_source_exec))))
 
 # two sets of object files, one for the lib, and one for the CLI programs
-OBJECT_LIB  := $(patsubst %, scratchpad/%.lib.o, $(C_BASE_LIB))
-OBJECT_EXEC := $(patsubst %, scratchpad/%.CLI.o, $(C_BASE_EXEC))
+object_lib  := $(patsubst %, scratchpad/%.lib.o, $(c_base_lib))
+object_exec := $(patsubst %, scratchpad/%.CLI.o, $(c_base_exec))
 
-# executables are made from EXEC sources
-EXEC := $(patsubst %, $(MACHINE_DIR)/%, $(C_BASE_EXEC))
+# executables are made from exec_ sources
+exec_ := $(patsubst %, $(MACHINE_DIR)/%, $(c_base_exec))
 
 #--------------------------------------------------------------------------------
 # pull in dependencies
 
--include $(OBJECT_LIB:.o=.d) $(OBJECT_EXEC:.o=.d)
+-include $(object_lib:.o=.d) $(object_exec:.o=.d)
 
 
 #--------------------------------------------------------------------------------
@@ -65,19 +60,19 @@ version:
 information:
 	@printf "· → Unicode middle dot — visible: [%b]\n" "·"
 	@echo "C_SOURCE_DIR: " $(C_SOURCE_DIR)
-	@echo "C_SOURCE_LIB: " $(C_SOURCE_LIB)
-	@echo "C_SOURCE_EXEC: " $(C_SOURCE_EXEC)
-	@echo "C_BASE_LIB: " $(C_BASE_LIB)
-	@echo "C_BASE_EXEC: " $(C_BASE_EXEC)
-	@echo "OBJECT_LIB: " $(OBJECT_LIB)
-	@echo "OBJECT_EXEC: " $(OBJECT_EXEC)
-	@echo "EXEC: " $(EXEC)
+	@echo "c_source_lib: " $(c_source_lib)
+	@echo "c_source_exec: " $(c_source_exec)
+	@echo "c_base_lib: " $(c_base_lib)
+	@echo "c_base_exec: " $(c_base_exec)
+	@echo "object_lib: " $(object_lib)
+	@echo "object_exec: " $(object_exec)
+	@echo "exec_: " $(exec_)
 
 .PHONY: library
 library: $(LIBRARY_FILE)
 
-$(LIBRARY_FILE): $(OBJECT_LIB)
-	@if [ -s "$@" ] || [ -n "$(OBJECT_LIB)" ]; then \
+$(LIBRARY_FILE): $(object_lib)
+	@if [ -s "$@" ] || [ -n "$(object_lib)" ]; then \
 		echo "ar rcs $@ $^"; \
 		ar rcs $@ $^; \
 	else \
@@ -85,10 +80,10 @@ $(LIBRARY_FILE): $(OBJECT_LIB)
 	fi   
 
 #.PHONY: CLI
-#CLI: $(LIBRARY_FILE) $(EXEC)
+#CLI: $(LIBRARY_FILE) $(exec_)
 
 .PHONY: CLI
-CLI: library $(EXEC)
+CLI: library $(exec_)
 
 
 # generally better to use the project local clean scripts, but this will make it so that the make targets can be run again
@@ -96,8 +91,8 @@ CLI: library $(EXEC)
 .PHONY: clean
 clean:
 	rm -f $(LIBRARY_FILE)
-	for obj in $(OBJECT_LIB) $(OBJECT_EXEC); do rm -f $$obj $${obj%.o}.d || true; done
-	for i in $(EXEC); do [ -e $$i ] && rm $$i || true; done
+	for obj in $(object_lib) $(object_exec); do rm -f $$obj $${obj%.o}.d || true; done
+	for i in $(exec_); do [ -e $$i ] && rm $$i || true; done
 
 
 # recipes
