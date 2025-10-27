@@ -119,6 +119,7 @@ $(KMOD_OUTPUT_DIR)/%.ko: kmod
 
 .PHONY: clean
 clean:
-	@echo "--- Cleaning Kbuild Artifacts in $(KMOD_OUTPUT_DIR) ---"
+	@echo "Cleaning: $(KMOD_BUILD_DIR)"
 	@$(MAKE) -C "$(KMOD_BUILD_DIR)" M="$(ABS_KMOD_OUTPUT_DIR)" clean >/dev/null 2>&1 || true
+	@echo "Cleaning: $(KMOD_OUTPUT_DIR)"
 	@rm -rf -- "$(KMOD_OUTPUT_DIR)"
