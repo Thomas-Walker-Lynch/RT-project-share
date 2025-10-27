@@ -139,5 +139,5 @@ clean:
 	  find   "$(kmod_output_dir)" -maxdepth 1 -type l -name '*.lib.c'  -delete 2>/dev/null || true; \
 	  find   "$(kmod_output_dir)" -maxdepth 1 -type f -name '*.kmod.c' -delete 2>/dev/null || true; \
 	  find   "$(kmod_output_dir)" -maxdepth 1 -type f -name '*.lib.c'  -delete 2>/dev/null || true; \
-	  rmdir "$(kmod_output_dir)" || true \
+	  rmdir "$(kmod_output_dir)" || true; \
 	fi
