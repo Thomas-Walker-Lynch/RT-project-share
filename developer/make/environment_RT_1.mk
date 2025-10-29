@@ -23,7 +23,7 @@ LIBRARY_FILE    := $(LIBRARY_DIR)/lib$(LIBRARY_NAME).a
 
 LN_FLAGS        := -L$(LIBRARY_DIR) -L/lib64 -L/lib
 
-MACHINE_DIR     := scratchpad
+MACHINE_DIR     := scratchpad/machine
 
 KMOD_SOURCE_DIR  := cc
 KMOD_CCFLAGS    := -I $(KMOD_SOURCE_DIR)

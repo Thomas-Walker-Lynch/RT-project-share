@@ -12,7 +12,7 @@ C              ?= gcc
 CFLAGS         ?=
 C_SOURCE_DIR   ?= cc
 LIBRARY_FILE   ?=
-MACHINE_DIR    ?= scratchpad
+MACHINE_DIR    ?= scratchpad/machine
 LN_FLAGS       ?=
 
 #--------------------------------------------------------------------------------
@@ -100,5 +100,6 @@ scratchpad/%.o: $(C_SOURCE_DIR)/%.c
 	$(C) $(CFLAGS) -o $@ -c $<
 
 $(MACHINE_DIR)/%: scratchpad/%.CLI.o
+	mkdir -p $(MACHINE_DIR)
 	$(C) -o $@ $< $(LN_FLAGS)
 
