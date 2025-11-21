@@ -9,7 +9,7 @@ SHELL=/bin/bash
 
 ECHO := printf "%b\n"
 
-C_SOURCE_DIR     := cc
+C_SOURCE_DIR     := authored
 C                := gcc
 CFLAGS           := -std=gnu11 -Wall -Wextra -Wpedantic -finput-charset=UTF-8
 CFLAGS           += -MMD -MP
@@ -23,7 +23,7 @@ LIBRARY_FILE    := $(LIBRARY_DIR)/lib$(LIBRARY_NAME).a
 
 LN_FLAGS        := -L$(LIBRARY_DIR) -L/lib64 -L/lib
 
-MACHINE_DIR     := scratchpad/machine
+MACHINE_DIR     := scratchpad/loadable
 
 KMOD_SOURCE_DIR  := cc
 KMOD_CCFLAGS    := -I $(KMOD_SOURCE_DIR)
